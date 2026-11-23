@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADCS Simulation — Correction Tracker</title>
+<!-- Saved progress is baked into this block when you click "Save progress".
+     Reopening the downloaded copy restores your ticks and notes. -->
+<script id="saved-state" type="application/json">{}</script>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel2:#1d222a; --line:#2a313b;
+    --txt:#e7ecf2; --muted:#9aa6b4; --accent:#5b9dff; --accent2:#3a6fd8;
+    --done:#37c98a; --donebg:#13341f; --warn:#f0b429;
+    --biBg:#123047; --biTx:#7cc0ff; --bigBg:#3a2c12; --bigTx:#f0c674; --cusBg:#3a1730; --cusTx:#ff9ecf;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f7fa; --panel:#ffffff; --panel2:#f0f3f7; --line:#e0e5ec;
+      --txt:#1a2129; --muted:#5c6773; --accent:#2b6cff; --accent2:#1e56d6;
+      --done:#0f9d63; --donebg:#e3f7ec; --warn:#b4790a;
+      --biBg:#e4f0fb; --biTx:#1b6fbf; --bigBg:#faf0dd; --bigTx:#95660a; --cusBg:#fbe6f3; --cusTx:#a8306f;
+      --shadow:0 1px 2px rgba(20,30,45,.06),0 8px 24px rgba(20,30,45,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:0 0 80px;
+  }
+  .wrap{max-width:1040px; margin:0 auto; padding:0 20px}
+  header.top{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    border-bottom:1px solid var(--line); padding:18px 0 14px; margin-bottom:8px;
+  }
+  h1{font-size:21px; margin:0 0 2px; letter-spacing:-.2px}
+  .sub{color:var(--muted); font-size:13px; margin:0}
+  .sub code{background:var(--panel2); padding:1px 6px; border-radius:5px; font-size:12px}
+  .bar-row{display:flex; align-items:center; gap:14px; margin-top:14px; flex-wrap:wrap}
+  .progress{flex:1; min-width:220px; height:12px; background:var(--panel2); border-radius:20px; overflow:hidden; border:1px solid var(--line)}
+  .progress > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--done),#2fe3a0); transition:width .35s ease}
+  .pct{font-variant-numeric:tabular-nums; font-weight:600; font-size:14px; min-width:118px}
+  .pct small{color:var(--muted); font-weight:400}
+  .btns{display:flex; gap:8px; flex-wrap:wrap}
+  button{
+    font:inherit; font-size:13px; font-weight:600; cursor:pointer; color:var(--txt);
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 14px;
+    transition:transform .06s ease, background .15s ease, border-color .15s;
+  }
+  button:hover{border-color:var(--accent)}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--accent2); border-color:var(--accent2); color:#fff}
+  button.primary:hover{background:var(--accent)}
+  section.group{margin:26px 0 0}
+  .group > h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+    margin:0 0 10px; display:flex; align-items:center; gap:10px;
+  }
+  .group > h2 .gcount{font-size:11px; background:var(--panel2); border:1px solid var(--line); color:var(--muted);
+    padding:1px 8px; border-radius:20px; letter-spacing:0; text-transform:none}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow);
+    padding:14px 16px; margin-bottom:10px; display:grid; grid-template-columns:26px 1fr; gap:12px;
+    transition:border-color .2s, background .2s;
+  }
+  .card.done{background:var(--donebg); border-color:color-mix(in srgb,var(--done) 45%, var(--line))}
+  .cb{appearance:none; -webkit-appearance:none; width:22px; height:22px; margin-top:1px;
+    border:2px solid var(--muted); border-radius:6px; cursor:pointer; position:relative; background:transparent; transition:.15s}
+  .cb:hover{border-color:var(--done)}
+  .cb:checked{background:var(--done); border-color:var(--done)}
+  .cb:checked::after{content:""; position:absolute; left:6px; top:2px; width:5px; height:10px;
+    border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(45deg)}
+  .body .title{font-weight:600; font-size:15px; margin:1px 0 2px}
+  .card.done .title{text-decoration:line-through; text-decoration-color:color-mix(in srgb,var(--done) 70%, transparent)}
+  .tags{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 8px}
+  .tag{font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:.02em}
+  .tag.bi{background:var(--biBg); color:var(--biTx)} .tag.big{background:var(--bigBg); color:var(--bigTx)}
+  .tag.cus{background:var(--cusBg); color:var(--cusTx)}
+  .tag.pri{background:var(--panel2); color:var(--txt); border:1px solid var(--line)}
+  .tag.ref{background:transparent; color:var(--muted); border:1px solid var(--line); font-weight:600}
+  .desc{color:var(--muted); font-size:13px; margin:0 0 10px}
+  .desc code{background:var(--panel2); padding:0 4px; border-radius:4px; font-size:12px}
+  .meta{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .meta label{font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:3px}
+  .meta input{font:inherit; font-size:13px; background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+    border-radius:7px; padding:5px 8px}
+  .meta input.date{width:150px} .meta input.by{width:120px} .meta input.notes{width:min(340px,60vw)}
+  .meta input:focus{outline:none; border-color:var(--accent)}
+  .savebanner{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px);
+    background:var(--done); color:#04180e; font-weight:700; padding:10px 20px; border-radius:30px;
+    box-shadow:var(--shadow); transition:transform .3s ease; font-size:13px}
+  .savebanner.show{transform:translateX(-50%) translateY(0)}
+  footer{color:var(--muted); font-size:12px; text-align:center; margin-top:34px}
+  .hint{background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:10px 14px;
+    color:var(--muted); font-size:12.5px; margin:14px 0 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>ADCS Simulation — Correction Tracker</h1>
+    <p class="sub">Source: <code>ADCS_SIM_MODEL_INVENTORY.md</code> · scenario <code>scenarioADCSSoftwareRW.py</code> · baseline 2026-07-30</p>
+    <div class="bar-row">
+      <div class="progress"><i id="pfill"></i></div>
+      <div class="pct"><span id="pnum">0 / 0</span> <small id="ppct">(0%)</small></div>
+      <div class="btns">
+        <button class="primary" id="save">⬇ Save progress</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hint">💡 Tick a box when a correction is done, and fill in the date / who did it / a note. Ticks and notes live only in this open page — click <b>Save progress</b> to download an updated copy that remembers everything. Reopen that copy to continue where you left off.</div>
+  <div id="content"></div>
+  <footer>Generated from the model inventory audit · every checkbox in the source document is represented here.</footer>
+</div>
+
+<div class="savebanner" id="banner">Saved ✓ — a copy downloaded with your progress</div>
+
+<script>
+const GROUPS = [
+  { name:"Actuator corrections", items:[
+    {id:"A2", title:"Replace placeholder MTQ voltage/dipole ratings with flight data-sheet values",
+      pri:1, eff:"big", ref:"§4 A2",
+      desc:"MTQ_MAX_VOLTAGE = 5.0 V and MTQ_MAX_DIPOLE = 0.2 A·m² are placeholders (lines 48–50). MTQ_DIPOLE_PER_VOLT = 0.2/5.0 is a linear placeholder gain. Swap in real torque-rod data-sheet values."},
+    {id:"A1", title:"Enable RW friction + minimum-torque deadband",
+      pri:4, eff:"bi", ref:"§4 A1",
+      desc:"Pass useRWfriction=True (Coulomb + Stribeck via betaStatic, cViscous) and useMinTorque=True. Re-baseline rw_tau_after_200s.png afterwards."},
+    {id:"A3", title:"Replace ideal-torque thruster placeholder with real geometry + firing model",
+      pri:6, eff:"big", ref:"§4 A3",
+      desc:"ExtForceTorque is a generic ideal torque source. Add thrusterDynamicEffector + firing logic (Schmitt/Remainder/Round) + thrForceMapping + a torque→force→on-time adapter in GeneratedADCSController (required glue). The single largest fidelity gap."},
+  ]},
+  { name:"Sensor corrections", items:[
+    {id:"S1", title:"Enable SimpleNav noise (PMatrix, walkBounds)",
+      pri:2, eff:"bi", ref:"§5 S1",
+      desc:"Set PMatrix (18×18 noise std-dev) and walkBounds — currently unset, so nav is a pass-through of truth. First honest look at closed-loop performance."},
+    {id:"S2", title:"Add discrete star tracker (starTracker)",
+      pri:8, eff:"bi", ref:"§5 S2",
+      desc:"Adds noise, bias, misalignment, update rate, Sun/Earth exclusion cones, loss-of-lock. Part of the discrete-sensor batch (backlog #8)."},
+    {id:"S3", title:"Add discrete gyro / IMU (imuSensor)",
+      pri:8, eff:"bi", ref:"§5 S3",
+      desc:"Adds ARW, rate-random-walk bias, scale factor, misalignment, saturation, quantisation. Part of the discrete-sensor batch (backlog #8)."},
+    {id:"S4", title:"Add magnetometer (MagnetometerTAM)",
+      pri:8, eff:"bi", ref:"§5 S4",
+      desc:"Adds bias, noise, saturation, sensor-frame misalignment, MTQ self-field. Also removes the truth-attitude rotation shortcut at line 526. Part of batch (backlog #8)."},
+    {id:"S5", title:"Add sun sensor (coarseSunSensor) + eclipse",
+      pri:8, eff:"bi", ref:"§5 S5",
+      desc:"Adds FOV limits, cosine response, noise, eclipse gating, albedo corruption; wire an estimator (sunlineEKF/UKF/SEKF/okeefeEKF). Part of batch (backlog #8)."},
+    {id:"S6", title:"Add encoder on RW speed feedback",
+      pri:10, eff:"bi", ref:"§5 S6",
+      desc:"Insert simulation.encoder between the RW effector and the controller to add quantisation/latency instead of feeding the exact integrator state."},
+    {id:"S7", title:"Swap hand-rolled target geometry for groundLocation (WGS-84)",
+      pri:7, eff:"bi", ref:"§5 S7",
+      desc:"Replaces the spherical-Earth (6 378 137 m, no flattening) target with a reference ellipsoid + access checks + elevation mask + range. Removes geodetic pointing bias."},
+  ]},
+  { name:"Environment & dynamics", items:[
+    {id:"E2", title:"Add J2 gravity (spherical harmonics)",
+      pri:5, eff:"bi", ref:"§6 E2",
+      desc:"createBodies() loads point-mass only — no J2. Use useSphericalHarmParams / loadGravFromFile. Correct orbit precession over long runs."},
+    {id:"E4", title:"Upgrade magnetic field to magneticFieldWMM",
+      pri:9, eff:"bi", ref:"§6 E4",
+      desc:"Replace the tilted centred-dipole with a realistic WMM field — matters for MTQ authority and TAM-based attitude."},
+    {id:"DET", title:"Restore a non-zero initial tumble to exercise detumble",
+      pri:12, eff:"bi", ref:"§6",
+      desc:"INITIAL_TUMBLE_RATE_MAGNITUDE_RAD_S = 0 despite the docstring claiming 10 rad/s. Detumble is currently a dead code path."},
+  ]},
+  { name:"Disturbance torques (review & disposition)", items:[
+    {id:"E5", title:"E5 Aerodynamic drag — disposition as out-of-scope [-] with justification",
+      eff:"bi", ref:"§7 E5",
+      desc:"At a = 10 000 km drag is negligible — a defensible [-] for this orbit. Mark it and record the justification."},
+    {id:"E6", title:"E6 Solar radiation pressure — add SRP model",
+      pri:3, eff:"bi", ref:"§7 E6",
+      desc:"radiationPressure / facetSRPDynamicEffector. A dominant secular momentum source a desat cycle must handle (backlog #3)."},
+    {id:"E7", title:"E7 Gravity-gradient torque — add GravityGradientEffector",
+      pri:3, eff:"bi", ref:"§7 E7",
+      desc:"The other dominant secular momentum source. Together with SRP, makes momentum build-up and desat need realistic (backlog #3)."},
+    {id:"E8", title:"E8 Residual magnetic dipole — add constant dipole",
+      eff:"big", ref:"§7 E8",
+      desc:"No dedicated module — add a constant dipole to the MTB command, or a small ExtForceTorque."},
+    {id:"E9", title:"E9 Eclipse / albedo — add eclipse, albedo, earthRadiationModel",
+      eff:"bi", ref:"§7 E9",
+      desc:"Enables eclipse gating and albedo corruption (ties in with the sun-sensor work in S5)."},
+    {id:"EREV", title:"Disturbances reviewed and dispositioned (overall sign-off)",
+      eff:"bi", ref:"§7",
+      desc:"Confirm every disturbance row above has been reviewed and given a status/justification."},
+  ]},
+  { name:"Custom code", items:[
+    {id:"C2", title:"Write a frame-convention unit test for C2",
+      pri:11, eff:"cus", ref:"§8 C2",
+      desc:"The sign/conjugation constants (CONJUGATE_Q_BI, ANGULAR_RATE_SIGN, RW_MOTOR_TORQUE_SIGN, ECI→body rotations) were determined empirically with no test. Add a known-attitude-in → known-torque-out test. Protects the riskiest code in the file."},
+  ]},
+  { name:"Verification checklist — re-run after ANY change above", items:[
+    {id:"V1", title:"--mode file completes 5000 s with no non-finite samples in any torque log", eff:null, ref:"§10", desc:""},
+    {id:"V2", title:"RW_tau, MTQ_tau, THR_tau all report non-finite samples = 0", eff:null, ref:"§10", desc:""},
+    {id:"V3", title:"Body-rate magnitude converges (final ≪ initial)", eff:null, ref:"§10", desc:""},
+    {id:"V4", title:"Earth/Sun/target body-frame direction plots settle to commanded alignment", eff:null, ref:"§10", desc:""},
+    {id:"V5", title:"No wheel exceeds Omega_max (628.32 rad/s) or h_max (50 N·m·s)", eff:null, ref:"§10", desc:""},
+    {id:"V6", title:"ACS/ephemeris/ADS mode histories show the expected mode sequence", eff:null, ref:"§10", desc:""},
+    {id:"V7", title:"--mode live still connects to Vizard on tcp://127.0.0.1:5556", eff:null, ref:"§10", desc:""},
+  ]},
+];
+
+const EFF_LABEL = {bi:"BI", big:"BI+G", cus:"CUS"};
+const content = document.getElementById('content');
+
+GROUPS.forEach((g, gi)=>{
+  const sec = document.createElement('section');
+  sec.className='group';
+  const h = document.createElement('h2');
+  h.innerHTML = `${g.name} <span class="gcount">${g.items.length}</span>`;
+  sec.appendChild(h);
+  g.items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className='card'; card.dataset.id = it.id;
+    let tags = '';
+    if(it.pri) tags += `<span class="tag pri">Priority #${it.pri}</span>`;
+    if(it.eff) tags += `<span class="tag ${it.eff}">${EFF_LABEL[it.eff]}</span>`;
+    if(it.ref) tags += `<span class="tag ref">${it.ref}</span>`;
+    card.innerHTML = `
+      <input type="checkbox" class="cb" data-id="${it.id}">
+      <div class="body">
+        <div class="title">${it.title}</div>
+        ${tags?`<div class="tags">${tags}</div>`:''}
+        ${it.desc?`<p class="desc">${it.desc}</p>`:''}
+        <div class="meta">
+          <label>Date<input class="date" type="date" data-f="date" data-id="${it.id}"></label>
+          <label>By<input class="by" type="text" placeholder="name" data-f="by" data-id="${it.id}"></label>
+          <label>Notes<input class="notes" type="text" placeholder="what changed / re-baseline note" data-f="notes" data-id="${it.id}"></label>
+        </div>
+      </div>`;
+    sec.appendChild(card);
+  });
+  content.appendChild(sec);
+});
+
+function updateProgress(){
+  const boxes = [...document.querySelectorAll('.cb')];
+  const done = boxes.filter(b=>b.checked).length;
+  const tot = boxes.length;
+  const pct = tot? Math.round(done/tot*100):0;
+  document.getElementById('pfill').style.width = pct+'%';
+  document.getElementById('pnum').textContent = `${done} / ${tot}`;
+  document.getElementById('ppct').textContent = `(${pct}%)`;
+}
+
+content.addEventListener('change', e=>{
+  if(e.target.classList.contains('cb')){
+    e.target.closest('.card').classList.toggle('done', e.target.checked);
+    updateProgress();
+  }
+});
+
+// ---- state load ----
+function applyState(st){
+  if(!st || !st.items) return;
+  for(const [id, v] of Object.entries(st.items)){
+    const cb = document.querySelector(`.cb[data-id="${CSS.escape(id)}"]`);
+    if(cb){ cb.checked = !!v.done; cb.closest('.card').classList.toggle('done', !!v.done); }
+    ['date','by','notes'].forEach(f=>{
+      const el = document.querySelector(`input[data-f="${f}"][data-id="${CSS.escape(id)}"]`);
+      if(el && v[f]!=null) el.value = v[f];
+    });
+  }
+}
+function readState(){
+  const items = {};
+  document.querySelectorAll('.card').forEach(card=>{
+    const id = card.dataset.id;
+    const cb = card.querySelector('.cb');
+    const get = f => card.querySelector(`input[data-f="${f}"]`)?.value || '';
+    items[id] = {done: cb.checked, date:get('date'), by:get('by'), notes:get('notes')};
+  });
+  return {savedAt:new Date().toISOString(), items};
+}
+try{ applyState(JSON.parse(document.getElementById('saved-state').textContent||'{}')); }catch(e){}
+updateProgress();
+
+// ---- save = download a copy with state embedded ----
+document.getElementById('save').addEventListener('click', ()=>{
+  const st = readState();
+  document.getElementById('saved-state').textContent = JSON.stringify(st);
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date(); const stamp = d.toISOString().slice(0,10);
+  a.href = url; a.download = `adcs_correction_tracker_${stamp}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  const b = document.getElementById('banner'); b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'), 2600);
+});
+
+document.getElementById('reset').addEventListener('click', ()=>{
+  if(!confirm('Clear all ticks and notes in this open page? (Your saved copies on disk are untouched.)')) return;
+  document.querySelectorAll('.cb').forEach(c=>{c.checked=false; c.closest('.card').classList.remove('done');});
+  document.querySelectorAll('.meta input').forEach(i=>i.value='');
+  updateProgress();
+});
+</script>
+</body>
+</html>

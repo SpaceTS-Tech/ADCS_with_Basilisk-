@@ -1,0 +1,19 @@
+Yes. I made interface-level changes to the generated ADCS software, but did not change its control laws or gains.
+Changes to ADCS_Software_v1
+Changed r_sun_i from a scalar to double[3].
+Changed v_sun_i from a scalar to double[3].
+Updated the Sun-pointing calculation to use each vector component:r_sun_i[i] - r_sat_i[i]
+v_sun_i[i] - v_sat_i[i]
+
+Sun-pointing gain changed from −1 to +1 in <S41>/Gain.
+Earth-target gain changed from −1 to +1 in <S42>/Gain.
+
+Added wrapper functions to:Set the mission command.
+Set reaction-wheel inertia and maximum momentum.
+Mark fine ADS as available, preventing the false mode_degraded state.
+
+Recompiled [ADCS_Software_v1.dll](D:/OneDrive/SpaceTS/Basilisk/ADCS_Software_v1_grt_rtw/ADCS_Software_v1.dll).
+
+
+vizard socket address:
+tcp://127.0.0.1:5556

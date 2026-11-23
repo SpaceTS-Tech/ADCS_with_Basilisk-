@@ -1,0 +1,228 @@
+{
+  "format": "aocs-link/1",
+  "software": {
+    "path": "../../../ADCS_Software_v1_grt_rtw/ADCS_Software_v1.dll",
+    "signature": "75dd34fb5f20398e"
+  },
+  "simulator": {
+    "entry": "adcs_sim.scenario.builder:build_simulation",
+    "simulator_dir": "../../simulator",
+    "signature": "dd2a808980c5d64d"
+  },
+  "nodes": {
+    "n1": {
+      "type": "mrp_to_quat",
+      "params": {},
+      "pos": [
+        -188.2,
+        -66.0
+      ]
+    },
+    "n2": {
+      "type": "rotate_to_body",
+      "params": {},
+      "pos": [
+        -303.2,
+        210.9
+      ]
+    },
+    "n3": {
+      "type": "select",
+      "params": {
+        "indices": "0,1,2"
+      },
+      "pos": [
+        -312.0,
+        994.0
+      ]
+    },
+    "n4": {
+      "type": "python_function",
+      "params": {
+        "inputs": 1,
+        "function": "adcs_sim.geometry.ground_target:position_inertial"
+      },
+      "pos": [
+        -323.5,
+        332.3
+      ],
+      "label": "Ground target (ECI)"
+    },
+    "n5": {
+      "type": "python_function",
+      "params": {
+        "inputs": 1,
+        "function": "adcs_sim.models.reaction_wheels:limit_motor_torque"
+      },
+      "pos": [
+        307.7,
+        929.9
+      ],
+      "label": "RW torque limit"
+    },
+    "n6": {
+      "type": "python_function",
+      "params": {
+        "inputs": 1,
+        "function": "adcs_sim.models.magnetorquers:limit_voltage"
+      },
+      "pos": [
+        644.1,
+        529.6
+      ],
+      "label": "MTQ voltage limit"
+    },
+    "n7": {
+      "type": "python_function",
+      "params": {
+        "inputs": 1,
+        "function": "adcs_sim.models.magnetorquers:voltage_to_dipole"
+      },
+      "pos": [
+        838.5,
+        529.3
+      ],
+      "label": "Voltage \u2192 dipole"
+    },
+    "n8": {
+      "type": "python_function",
+      "params": {
+        "inputs": 1,
+        "function": "adcs_sim.models.thrusters:limit_body_torque"
+      },
+      "pos": [
+        384.5,
+        341.0
+      ],
+      "label": "THR torque limit"
+    }
+  },
+  "wires": [
+    {
+      "from": "sim:SimpleNavigation.attOutMsg.sigma_BN",
+      "to": "n1:sigma"
+    },
+    {
+      "from": "n1:q",
+      "to": "sw:q_BI"
+    },
+    {
+      "from": "sim:SimpleNavigation.attOutMsg.omega_BN_B",
+      "to": "sw:omega"
+    },
+    {
+      "from": "sim:SimpleNavigation.attOutMsg.sigma_BN",
+      "to": "n2:sigma_BN"
+    },
+    {
+      "from": "sim:CenteredDipoleMagneticField.envOutMsgs[0].magField_N",
+      "to": "n2:v_N"
+    },
+    {
+      "from": "n2:v_B",
+      "to": "sw:B"
+    },
+    {
+      "from": "sim:bsk-Sat:ReactionWheelStateEffector.rwSpeedOutMsg.wheelSpeeds",
+      "to": "n3:u"
+    },
+    {
+      "from": "n3:y",
+      "to": "sw:RW_omega"
+    },
+    {
+      "from": "sim:SimpleNavigation.transOutMsg.v_BN_N",
+      "to": "sw:v_sat_i"
+    },
+    {
+      "from": "sim:SimpleNavigation.transOutMsg.r_BN_N",
+      "to": "sw:r_sat_i"
+    },
+    {
+      "from": "sim:SpiceInterfaceData.planetStateOutMsgs[0].J20002Pfix",
+      "to": "n4:u1"
+    },
+    {
+      "from": "n4:y",
+      "to": "sw:r_p_i"
+    },
+    {
+      "from": "sim:SpiceInterfaceData.planetStateOutMsgs[1].VelocityVector",
+      "to": "sw:v_sun_i"
+    },
+    {
+      "from": "sim:SpiceInterfaceData.planetStateOutMsgs[1].PositionVector",
+      "to": "sw:r_sun_i"
+    },
+    {
+      "from": "sw:RW_tau",
+      "to": "n5:u1"
+    },
+    {
+      "from": "n5:y",
+      "to": "sim:bsk-Sat:ReactionWheelStateEffector.rwMotorCmdInMsg.motorTorque"
+    },
+    {
+      "from": "sw:MTQ_tau",
+      "to": "n6:u1"
+    },
+    {
+      "from": "n6:y",
+      "to": "n7:u1"
+    },
+    {
+      "from": "n7:y",
+      "to": "sim:MTQ_effector.mtbCmdInMsg.mtbDipoleCmds"
+    },
+    {
+      "from": "sw:THR_tau",
+      "to": "n8:u1"
+    },
+    {
+      "from": "n8:y",
+      "to": "sim:Thruster_torque_effector.cmdTorqueInMsg.torqueRequestBody"
+    }
+  ],
+  "layout": {
+    "positions": {
+      "sw": [
+        46.6,
+        266.9
+      ],
+      "sim:SimpleNavigation": [
+        -688.1,
+        -96.0
+      ],
+      "sim:CenteredDipoleMagneticField": [
+        -684.7,
+        149.4
+      ],
+      "sim:bsk-Sat:ReactionWheelStateEffector": [
+        -102.4,
+        914.6
+      ],
+      "sim:Thruster_torque_effector": [
+        641.5,
+        280.2
+      ],
+      "sim:MTQ_effector": [
+        1036.2,
+        509.5
+      ],
+      "sim:SpiceInterfaceData": [
+        -687.5,
+        304.0
+      ]
+    },
+    "shown_modules": [],
+    "expanded_groups": [
+      "MTQ_effector.mtbCmdInMsg",
+      "Thruster_torque_effector.cmdTorqueInMsg"
+    ],
+    "rotations": {
+      "n3": 180,
+      "n5": 180,
+      "sim:bsk-Sat:ReactionWheelStateEffector": 180
+    }
+  }
+}

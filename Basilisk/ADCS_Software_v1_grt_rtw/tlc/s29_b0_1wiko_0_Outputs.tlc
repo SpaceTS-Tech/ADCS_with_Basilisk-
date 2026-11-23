@@ -1,0 +1,42 @@
+%implements s29_b0_1wiko_0_Outputs "C"
+
+%function Outputs(block, system) Output
+%assign cfgTxt = ""
+%openfile cfgTxt
+%assign localVarDecl = ""
+/* SignalConversion generated from: '<S71>/Out1' incorporates:
+ *  Constant: '<S71>/Constant'
+ */
+memcpy(&rty_Out1[0], &localP->Constant_Value[0], 9U * sizeof(real_T));
+%closefile cfgTxt
+%<cfgTxt>
+%assign rtmArgSys = ::CompiledModel.System[::CompiledModel.System[::CompiledModel.RTWCGModules.RTWCGModule[0].CGSystemIdx].NonInlinedParentSystemIdx]
+%if SysFcnArgNeeded("Output", rtmArgSys.Interface.RTMArgDef, rtmArgSys.CurrentTID, FcnSysModuleIsRateGrouping(rtmArgSys, "Output"))
+%<SLibCG_AccessArg(0, 0, 0)>
+%endif
+%if SLibCG_ArgAccessed(0, 0, 0)
+%<SLibAccessArg(rtmArgSys.Interface.RTMArgDef, "Output", rtmArgSys.CurrentTID, FcnSysModuleIsRateGrouping(rtmArgSys, "Output"))>
+%endif
+%if (IsModelReferenceBaseSys(rtmArgSys) && (IsModelRefScalableBuild() || GenerateClassInterface)) ||...
+(GenerateClassInterface && SLibIsMultiInstanceServer(rtmArgSys))
+%<SLibCG_UndoAccessArg(0, 0, 0)>
+%endif
+%<LibSetSystemField(system, "CachedOutputLocalVars", localVarDecl)>
+%endfunction
+%function OutputsFcnProtoType(block, system) Output
+%assign fcnProtoType = ""
+%openfile fcnProtoType
+static void ADCS_Software_v1_M_MIN_DRAG(\
+%assign comma = ""
+%if SLibCG_ArgAccessed(0, 0, 0)
+%<comma>%<::tSimStructType> * const %<::tSimStruct>\
+%assign comma = ", "
+%<SLibUpdateSymbolForFunction("ADCS_Software_v1_M_MIN_DRAG", SLibGetFcnDefinitionRTMSymbolName(), TLC_FALSE)>\
+%endif
+%<comma>real_T rty_Out1[9]\
+%assign comma = ", "
+%<comma>P_M_MIN_DRAG_ADCS_Software_v1_T *localP\
+%assign comma = ", "
+%closefile fcnProtoType
+%<SLibCG_SetFcnProtoType(0, 0, fcnProtoType)>
+%endfunction

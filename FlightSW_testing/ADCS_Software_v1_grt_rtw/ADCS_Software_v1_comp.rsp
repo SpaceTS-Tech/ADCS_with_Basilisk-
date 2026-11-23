@@ -1,0 +1,6 @@
+-IC:/Users/Administrator/OneDrive/SpaceTS/Projects/ADCS_Software_Simulink/FlightSW_testing
+-IC:/Users/Administrator/OneDrive/SpaceTS/Projects/ADCS_Software_Simulink/FlightSW_testing/ADCS_Software_v1_grt_rtw
+-I"C:/Program Files/MATLAB/R2026a/extern/include"
+-I"C:/Program Files/MATLAB/R2026a/simulink/include"
+-I"C:/Program Files/MATLAB/R2026a/rtw/c/src"
+-I"C:/Program Files/MATLAB/R2026a/rtw/c/src/ext_mode/common"

@@ -1,0 +1,7 @@
+# Python 3.12, 64-bit Windows (the controller is a Win64 DLL).
+# Versions are the ones the simulator was tested with on 2026-10-22.
+bsk==2.11.1
+numpy==2.4.6
+matplotlib==3.10.9
+scipy==1.18.1
+pillow==12.2.0

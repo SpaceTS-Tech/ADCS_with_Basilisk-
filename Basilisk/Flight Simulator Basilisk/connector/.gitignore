@@ -1,0 +1,4 @@
+connector.log
+output/
+__pycache__/
+active_link.txt

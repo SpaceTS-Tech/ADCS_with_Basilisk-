@@ -1,0 +1,646 @@
+﻿<meta charset="utf-8">
+<title>ADCS Software Test Cases</title>
+<style>
+  :root{
+    --ink:#12181f; --muted:#5b6875; --line:#d5dce4; --bg:#fff; --panel:#f6f8fa;
+    --accent:#1b4f8f; --ok:#0f7b3d; --fail:#b3261e; --warn:#8a5a00; --blank:#7a8794;
+    --fill:#fffbe8; --fillline:#e0c97a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 28px 80px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.2px}
+  h2{font-size:19px;margin:36px 0 10px;padding-bottom:6px;
+     border-bottom:2px solid var(--accent);color:var(--accent)}
+  h3{font-size:15px;margin:22px 0 8px}
+  p{margin:8px 0}
+  code{background:var(--panel);padding:1px 5px;border-radius:3px;
+       font:12.5px/1.4 Consolas,"Courier New",monospace}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:600}
+  .sub{color:var(--muted);font-size:13px}
+  .doc-meta{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    padding:14px 16px;margin:16px 0 8px}
+  .doc-meta table{margin:0}
+  .doc-meta td{border:none;padding:3px 8px 3px 0}
+  .doc-meta td:first-child{width:150px;color:var(--muted);font-weight:600}
+
+  /* editable fields ---------------------------------------------------- */
+  .fill{background:var(--fill);border:1px dashed var(--fillline);border-radius:3px;
+    padding:3px 7px;min-height:1.5em;display:block;outline:none;white-space:pre-wrap}
+  .fill:focus{border-style:solid;border-color:var(--accent);background:#fff}
+  .fill:empty::before{content:attr(data-ph);color:var(--blank);font-style:italic}
+  .fill-inline{display:inline-block;min-width:150px}
+
+  /* test case cards ---------------------------------------------------- */
+  .tc{border:1px solid var(--line);border-radius:7px;margin:22px 0;overflow:hidden;
+      page-break-inside:avoid}
+  .tc-head{background:var(--panel);border-bottom:1px solid var(--line);
+    padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .tc-id{font-weight:700;color:var(--accent);font-size:15px}
+  .tc-title{font-weight:600;flex:1;min-width:220px}
+  .tc-body{padding:14px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11.5px;
+    font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  .b-tumbled{background:#fdecec;color:#a3271f;border:1px solid #f0b4ae}
+  .b-detumbled{background:#e9f5ee;color:#1a6b3c;border:1px solid #a9d7bd}
+  .b-saturated{background:#fdf0dd;color:#8a5a00;border:1px solid #eccb92}
+  .b-desaturated{background:#eaf1fb;color:#1b4f8f;border:1px solid #b3cbe9}
+  .b-offpoint{background:#f3edfb;color:#5b3a94;border:1px solid #cbb8ea}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+
+  /* plots -------------------------------------------------------------- */
+  .plots{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:14px;margin-top:8px}
+  @media(max-width:1000px){.plots{grid-template-columns:1fr}}
+  .plot{border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--panel)}
+  .plot img{width:100%;display:block;background:#fff;cursor:zoom-in}
+  .plot .cap{padding:5px 8px;font-size:11.5px;color:var(--muted);
+    border-top:1px solid var(--line);word-break:break-all}
+  .plot .missing{padding:26px 10px;text-align:center;color:var(--blank);
+    font-size:12px;font-style:italic}
+
+  /* click any plot to view it full size */
+  #zoom{position:fixed;inset:0;z-index:100;background:rgba(12,18,26,.9);
+    display:none;align-items:center;justify-content:center;cursor:zoom-out;padding:24px}
+  #zoom.on{display:flex}
+  #zoom img{max-width:100%;max-height:100%;background:#fff;border-radius:4px;
+    box-shadow:0 8px 40px rgba(0,0,0,.5)}
+
+  .toolbar{position:sticky;top:0;z-index:20;background:var(--bg);
+    border-bottom:1px solid var(--line);padding:9px 0;margin-bottom:14px;
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{font:13px/1 inherit;padding:7px 13px;border:1px solid var(--line);
+    background:var(--panel);border-radius:5px;cursor:pointer;color:var(--ink)}
+  button:hover{background:#e9eef4}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .saved{color:var(--ok);font-size:12.5px}
+
+  select.status{font:13px inherit;padding:4px 8px;border:1px solid var(--line);
+    border-radius:4px;background:#fff}
+  .s-PASS{color:var(--ok);font-weight:700}
+  .s-FAIL{color:var(--fail);font-weight:700}
+  .s-BLOCKED{color:var(--warn);font-weight:700}
+
+  .note{border-left:3px solid var(--accent);background:var(--panel);
+    padding:9px 13px;margin:12px 0;font-size:13px}
+  .note.warn{border-left-color:var(--warn)}
+
+  @media print{
+    .toolbar{display:none}
+    body{font-size:11px}
+    .wrap{max-width:none;padding:0}
+    .tc{break-inside:avoid}
+    .fill{background:none;border:none;border-bottom:1px solid #999}
+    a{text-decoration:none;color:inherit}
+  }
+</style>
+
+<div id="zoom" onclick="this.classList.remove('on')"><img alt=""></div>
+
+<div class="wrap">
+
+<div class="toolbar">
+  <button class="primary" onclick="saveAll()">Save entries</button>
+  <button onclick="exportJSON()">Export JSON</button>
+  <button onclick="document.getElementById('imp').click()">Import JSON</button>
+  <input id="imp" type="file" accept="application/json" style="display:none" onchange="importJSON(this)">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <button onclick="clearAll()">Clear entries</button>
+  <span id="savedMsg" class="saved"></span>
+</div>
+
+<h1>ADCS Software Test Cases</h1>
+<p class="sub">Software-in-the-loop verification of the generated ADCS flight
+controller against a Basilisk plant model.</p>
+
+<div class="doc-meta">
+  <table>
+    <tr><td>Document ID</td><td><span class="fill fill-inline" data-k="meta.docid" data-ph="e.g. ADCS-STP-001"></span></td></tr>
+    <tr><td>Revision</td><td><span class="fill fill-inline" data-k="meta.rev" data-ph="e.g. 1.0"></span></td></tr>
+    <tr><td>Prepared by</td><td><span class="fill fill-inline" data-k="meta.by" data-ph="name"></span></td></tr>
+    <tr><td>Date of run</td><td><span class="fill fill-inline" data-k="meta.date" data-ph="YYYY-MM-DD"></span></td></tr>
+    <tr><td>Software under test</td><td><span class="fill fill-inline" data-k="meta.sut" data-ph="ADCS_Software_v1.dll, model version, build timestamp"></span></td></tr>
+    <tr><td>Test environment</td><td><span class="fill fill-inline" data-k="meta.env" data-ph="Basilisk version, Python version, host"></span></td></tr>
+  </table>
+</div>
+
+<!-- ================================================================== -->
+<h2>1.0 Purpose and Scope</h2>
+
+<p>This document defines the test cases used to verify the ADCS flight software
+mission modes. Each case runs the <strong>real compiled controller</strong>
+(<code>ADCS_Software_v1.dll</code>) at the 0.05 s control rate against a
+simulated plant, making this a software-in-the-loop (SIL) activity.</p>
+
+<h3>Out of scope</h3>
+<table>
+  <tr><th style="width:38%">Not covered</th><th>Reason</th></tr>
+  <tr><td>Vizard rendering and image decode</td><td>Optical cases use an analytically projected camera feed</td></tr>
+  <tr><td>Sensor noise, bias, misalignment</td><td>No sensor models implemented; controller is fed truth state</td></tr>
+  <tr><td>Flight toolchain / target hardware</td><td>Host-compiled x86-64 GRT build with instrumentation</td></tr>
+  <tr><td>Disturbance torques</td><td>Drag, SRP, gravity gradient, residual dipole all disabled</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2>2.0 Verification Method</h2>
+
+<p>Each test case declares which of the four verification methods it applies,
+in increasing order of rigour:</p>
+
+<table>
+  <tr><th style="width:20%">Method</th><th>Definition</th></tr>
+  <tr><td><strong>Inspection</strong></td><td>Non-destructive examination of the product. Here: reading generated C, parameter values and configuration.</td></tr>
+  <tr><td><strong>Demonstration</strong></td><td>Operating the product as intended and observing the expected result. Here: running a mode and confirming it behaves qualitatively.</td></tr>
+  <tr><td><strong>Test</strong></td><td>Controlled, predefined inputs producing a specific predefined output. Here: fixed initial conditions with numeric pass thresholds.</td></tr>
+  <tr><td><strong>Analysis</strong></td><td>Models, calculations and extrapolation from measured results. Here: settling time, damping ratio and momentum budget derived from recorded telemetry.</td></tr>
+</table>
+
+<div class="note">
+<strong>Verification</strong> - are we building the product right? Checks the
+implementation against the design.<br>
+<strong>Validation</strong> - are we building the right product? Checks that
+the end product meets the mission need. These cases are
+<strong>verification</strong>; validation against mission need is a separate
+activity.
+</div>
+
+<!-- ================================================================== -->
+<h2>3.0 Initial-State Definitions</h2>
+
+<p>Every test case records the state the satellite is in when the scenario
+starts. The terms are defined here so a case is reproducible from its label
+alone.</p>
+
+<h3>3.1 Attitude / body-rate state</h3>
+<table>
+  <tr><th style="width:20%">State</th><th style="width:32%">Definition</th><th>Set by</th></tr>
+  <tr><td><span class="badge b-tumbled">TUMBLED</span></td>
+      <td>Body rate significantly above the control deadband; the vehicle is rotating uncontrolled.</td>
+      <td><code>omega_BN_BInit</code> non-zero</td></tr>
+  <tr><td><span class="badge b-detumbled">DETUMBLED</span></td>
+      <td>Body rate at or near zero; attitude is controllable.</td>
+      <td><code>omega_BN_BInit = 0</code></td></tr>
+  <tr><td><span class="badge b-offpoint">OFF-POINTING</span></td>
+      <td>Detumbled, but attitude deliberately rotated off the nominal reference so the mode must acquire.</td>
+      <td><code>sigma_BNInit</code> rotated</td></tr>
+</table>
+
+<h3>3.2 Reaction-wheel momentum state</h3>
+<table>
+  <tr><th style="width:20%">State</th><th style="width:32%">Definition</th><th>Threshold</th></tr>
+  <tr><td><span class="badge b-saturated">SATURATED</span></td>
+      <td>Stored wheel momentum at or above the desaturation entry band; the controller must desaturate before it can point.</td>
+      <td><code>|h| &ge; 0.95 &times; h_max</code> = 47.5 N m s</td></tr>
+  <tr><td><span class="badge b-desaturated">DESATURATED</span></td>
+      <td>Stored wheel momentum below the desaturation exit band; full control authority available.</td>
+      <td><code>|h| &le; 0.25 &times; h_max</code> = 12.5 N m s</td></tr>
+</table>
+
+<p class="sub"><code>h_max</code> = 50 N m s per wheel
+(<code>CONTROLLER_H_MAX</code>). Wheel momentum
+<code>h = I_RW &times; omega_RW</code> with
+<code>I_RW = 0.0796 kg m^2</code>.</p>
+
+<!-- ================================================================== -->
+<h2>4.0 Requirements Traceability Matrix</h2>
+
+<div class="note warn">
+The requirement IDs below are <strong>placeholders</strong>. Replace them with
+the actual IDs from the ADCS requirements document, then confirm every
+requirement maps to at least one test case.
+</div>
+
+<table id="rtm">
+  <tr><th style="width:12%">Req ID</th><th style="width:38%">Requirement (fill from requirements document)</th>
+      <th style="width:22%">Test case(s)</th><th>Method</th></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2>5.0 Test Cases</h2>
+
+<p class="sub">Plots are loaded from
+<code>plots/&lt;TEST_CASE_ID&gt;/&lt;name&gt;.png</code> relative to this file.
+Create that folder and drop the figures in; they appear automatically on
+reload. Until then each slot shows its expected filename.</p>
+
+<div id="cases"></div>
+
+<!-- ================================================================== -->
+<h2>6.0 Results Summary</h2>
+<table id="summary">
+  <tr><th style="width:12%">Test case</th><th style="width:34%">Title</th>
+      <th style="width:16%">Initial state</th><th style="width:12%">Duration</th>
+      <th style="width:12%">Status</th><th>Run date</th></tr>
+</table>
+
+<h3>6.1 Overall assessment</h3>
+<span class="fill" data-k="summary.assessment"
+      data-ph="Overall verdict, deviations, and any waivers or retests required."></span>
+
+<h3>6.2 Approval</h3>
+<table>
+  <tr><th style="width:25%">Role</th><th style="width:40%">Name</th><th>Signature / date</th></tr>
+  <tr><td>Tested by</td><td><span class="fill" data-k="appr.test.name" data-ph=""></span></td><td><span class="fill" data-k="appr.test.sig" data-ph=""></span></td></tr>
+  <tr><td>Reviewed by</td><td><span class="fill" data-k="appr.rev.name" data-ph=""></span></td><td><span class="fill" data-k="appr.rev.sig" data-ph=""></span></td></tr>
+  <tr><td>Approved by</td><td><span class="fill" data-k="appr.app.name" data-ph=""></span></td><td><span class="fill" data-k="appr.app.sig" data-ph=""></span></td></tr>
+</table>
+
+</div>
+
+<!-- ===================================================================
+     AUTO-FILLED RESULTS.  Written by run_test_cases.py -- do not edit by
+     hand; anything typed into the page is stored separately in the browser
+     and is never overwritten by a test run.
+     =================================================================== -->
+<script id="results-data">
+window.RESULTS = {
+ "TC_01.actual": "PASS  reaches ACS DETUMBLE: 100% of steps\nPASS  body rate reduced >=80%: 5.385e-02 -> 4.805e-04 rad/s\nPASS  body rate bounded (<0.5 rad/s): peak 5.385e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'DETUMBLE': '100%'}\nbody rate initial -> final [rad/s]: 0.05385 -> 0.0004805\nwheel |h| initial -> final [N m s]: 0 -> 1.975e-08",
+ "TC_01.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_01.plots": "body_rate.png, acs_mode.png",
+ "TC_01.rundate": "2026-08-10",
+ "TC_01.status": "PASS",
+ "TC_02.actual": "PASS  reaches ACS POINT: 100% of steps\nPASS  pointing settled (tail std < 2 deg): 0.00 deg\nPASS  boresight within 5 deg: 0.1 deg\nPASS  body rate bounded (<0.5 rad/s): peak 2.740e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '100%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0006256\nwheel |h| initial -> final [N m s]: 0 -> 0.0724\nboresight error initial -> final [deg]: 90.57 -> 0.06829\nbest aligned axis: +Z (0.1 deg)",
+ "TC_02.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_02.plots": "pointing_error.png, acs_mode.png",
+ "TC_02.rundate": "2026-08-10",
+ "TC_02.status": "PASS",
+ "TC_03.actual": "PASS  reaches ACS POINT: 100% of steps\nPASS  pointing settled (tail std < 2 deg): 0.00 deg\nPASS  boresight within 15 deg: 0.1 deg\nPASS  body rate bounded (<0.5 rad/s): peak 2.859e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '100%'}\nbody rate initial -> final [rad/s]: 0 -> 6.076e-05\nwheel |h| initial -> final [N m s]: 0 -> 0.009802\nboresight error initial -> final [deg]: 96.73 -> 0.07896\nbest aligned axis: +Z (0.1 deg)",
+ "TC_03.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_03.plots": "pointing_error.png, acs_mode.png",
+ "TC_03.rundate": "2026-08-10",
+ "TC_03.status": "PASS",
+ "TC_04.actual": "PASS  reaches ACS POINT: 100% of steps\nPASS  pointing settled (tail std < 2 deg): 0.04 deg\nPASS  boresight within 15 deg: 1.9 deg\nPASS  body rate bounded (<0.5 rad/s): peak 3.176e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '100%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0007281\nwheel |h| initial -> final [N m s]: 0 -> 0.08424\nboresight error initial -> final [deg]: 109.6 -> 1.942\nbest aligned axis: +Z (1.9 deg)",
+ "TC_04.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_04.plots": "pointing_error.png, acs_mode.png",
+ "TC_04.rundate": "2026-08-10",
+ "TC_04.status": "PASS",
+ "TC_05.actual": "PASS  reaches ACS OPTICAL: 100% of steps\nPASS  target visible in the optical frame at t=0: in frame\nPASS  target held within 25 px of centre: 3.8 px at end\nPASS  centroid bounded (<150 px): peak 4.6 px\nPASS  target stays in the optical frame: lost for 0 step(s)\nPASS  body rate bounded (<0.5 rad/s): peak 7.218e-04 rad/s\n\nACS occupancy: {'IDLE': '0%', 'OPTICAL': '100%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0006182\nwheel |h| initial -> final [N m s]: 0 -> 0.07109\ncentroid radius initial -> final [px]: 3.661 -> 3.808\nframes with target visible: 12001/12001",
+ "TC_05.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_05.plots": "centroid.png, acs_mode.png",
+ "TC_05.rundate": "2026-08-10",
+ "TC_05.status": "PASS",
+ "TC_06.actual": "PASS  reaches ACS OPTICAL: 100% of steps\nPASS  target visible in the optical frame at t=0: in frame\nPASS  target held within 25 px of centre: 3.8 px at end\nPASS  centroid bounded (<150 px): peak 99.4 px\nPASS  target stays in the optical frame: lost for 0 step(s)\nPASS  centroid acquired (halved from start): 34.0 -> 3.8 px\nPASS  body rate bounded (<0.5 rad/s): peak 9.300e-03 rad/s\n\nACS occupancy: {'IDLE': '0%', 'OPTICAL': '100%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0006404\nwheel |h| initial -> final [N m s]: 0 -> 0.07361\ncentroid radius initial -> final [px]: 33.99 -> 3.808\nframes with target visible: 12001/12001",
+ "TC_06.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_06.plots": "centroid.png, acs_mode.png",
+ "TC_06.rundate": "2026-08-10",
+ "TC_06.status": "PASS",
+ "TC_07.actual": "PASS  reaches ACS DETUMBLE: 94% of steps\nPASS  enters ACS DESAT: 4451 steps\nPASS  DESAT precedes the commanded mode: first DESAT step 1, first DETUMBLE step 4452\nPASS  wheel momentum shed: 4.0 -> 0.0 N m s (exit band 1.0)\nPASS  body rate reduced >=80%: 5.385e-02 -> 2.589e-09 rad/s\nPASS  body rate bounded (<0.5 rad/s): peak 5.385e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'DETUMBLE': '94%', 'DESAT': '6%'}\nbody rate initial -> final [rad/s]: 0.05385 -> 2.589e-09\nwheel |h| initial -> final [N m s]: 4 -> 1.379e-13",
+ "TC_07.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_07.notes": "FAIL is a test-definition issue, not a software defect -- pending a specification decision.\n\nBoth mission objectives are met in full. Over 4000 s (80 000 control steps, roughly 40% of an orbit) the body rate falls 5.385e-02 -> 1.750e-06 rad/s and wheel momentum drains 4.0 -> 0.0 N m s, well below the 1.0 N m s exit band. Yet ACS_DETUMBLE occupies 100% of steps and ACS_DESAT is entered 0 times, so the 'DESAT precedes the commanded mode' criterion cannot pass.\n\nWHY DESAT CANNOT FIRE (measured against model 2.63, which DOES contain a '(desired_acs == 7) || Compare_i -> ACS_DESAT' branch in the DETUMBLE state). The branch is present and correct; the two windows it depends on never overlap:\n  - Saturated (Compare_i = 1) only for roughly the first 75 s. Wheel friction pulls momentum below the 3.8 N m s entry band by t = 100 s (h1: 3.969 at t=10, 3.849 at t=50, 3.703 at t=100).\n  - The DETUMBLE state only evaluates its transitions when '(desired_acs != 1) || (rate_measure <= CompareToConstant1_const)'. Under mission command 1 desired_acs is pinned at 1, so transitions wait until the body rate reaches ~0, which happens around t = 3000 s.\n  - By then h = 0.000 N m s and Compare_i = 0, so the DESAT branch is correctly skipped -- there is nothing left to desaturate.\n\nSaturation therefore ends about 40x before the state is permitted to act on it. Making TC_07 pass as written would require saturation to PREEMPT detumble (evaluating the DESAT transition regardless of detumble completion), i.e. interrupting stabilisation of a tumbling vehicle to unload wheels that are draining on their own.\n\nMomentum drains through wheel friction while in DETUMBLE -- RW_tau is zero in that mode (the RW torque switch has no case 1 and falls through to the IDLE branch), so the wheels simply coast down against Coulomb and viscous drag: 4.0 -> 0.0 N m s in about 2500 s.\n\nACTION: confirm whether detumble is specified to outrank desaturation. If it is, this case should assert that priority (ACS_DETUMBLE occupied, ACS_DESAT absent) instead of the DESAT-first ordering, which would turn it into a genuine test of the rule. The criterion has deliberately not been relaxed without that decision.",
+ "TC_07.plots": "acs_mode.png, wheel_momentum.png, body_rate.png",
+ "TC_07.rundate": "2026-08-10",
+ "TC_07.status": "PASS",
+ "TC_08.actual": "PASS  reaches ACS POINT: 95% of steps\nPASS  enters ACS DESAT: 1413 steps\nPASS  DESAT precedes the commanded mode: first DESAT step 1, first POINT step 1414\nPASS  wheel momentum shed: 4.0 -> 0.6 N m s (exit band 1.0)\nPASS  pointing settled (tail std < 2 deg): 0.00 deg\nPASS  body rate bounded (<0.5 rad/s): peak 2.556e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '95%', 'DESAT': '5%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0006219\nwheel |h| initial -> final [N m s]: 4 -> 0.6191\nboresight error initial -> final [deg]: 90.57 -> 0.153\nbest aligned axis: +Z (0.2 deg)",
+ "TC_08.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_08.notes": "Passes only with two defects corrected in the desaturation law. Both were required together -- fixing either alone makes the behaviour worse.\n\n1. SIGN. '<S25>/Gain2' generated THR_tau = +k_desat*RW_omega. Desaturation needs an external torque OPPOSING stored momentum, so the gain must be negative. As generated the thrusters pushed with the momentum, driving the wheels further into saturation.\n\n2. FRAME. The bridge rotated THR_tau by dcm_BN unconditionally. In DESAT that command is built from RW_omega and is therefore already in body axes, so the rotation swept the torque direction around the body once per orbit; measured on 2026-08-10 the components reversed near t = 1200 s and the wheels spun back up and pinned at the speed limit. Corrected by DESAT_BODY_FRAME in adcs_sim/config/conventions.py.\n\nThe sign fix is currently a HAND PATCH to the generated C. Regenerating from Simulink will revert it -- set '<S25>/Gain2' to -k_desat in the model to make it permanent.",
+ "TC_08.plots": "acs_mode.png, wheel_momentum.png, pointing_error.png",
+ "TC_08.rundate": "2026-08-10",
+ "TC_08.status": "PASS",
+ "TC_09.actual": "PASS  reaches ACS POINT: 95% of steps\nPASS  enters ACS DESAT: 1399 steps\nPASS  DESAT precedes the commanded mode: first DESAT step 1, first POINT step 1400\nPASS  wheel momentum shed: 4.0 -> 0.7 N m s (exit band 1.0)\nPASS  pointing settled (tail std < 2 deg): 0.00 deg\nPASS  body rate bounded (<0.5 rad/s): peak 2.954e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '95%', 'DESAT': '5%'}\nbody rate initial -> final [rad/s]: 0 -> 6.277e-05\nwheel |h| initial -> final [N m s]: 4 -> 0.6668\nboresight error initial -> final [deg]: 96.73 -> 0.1304\nbest aligned axis: +Z (0.1 deg)",
+ "TC_09.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_09.plots": "acs_mode.png, wheel_momentum.png, pointing_error.png",
+ "TC_09.rundate": "2026-08-10",
+ "TC_09.status": "PASS",
+ "TC_10.actual": "PASS  reaches ACS POINT: 95% of steps\nPASS  enters ACS DESAT: 1542 steps\nPASS  DESAT precedes the commanded mode: first DESAT step 1, first POINT step 1543\nPASS  wheel momentum shed: 4.0 -> 0.3 N m s (exit band 1.0)\nPASS  pointing settled (tail std < 2 deg): 0.03 deg\nPASS  body rate bounded (<0.5 rad/s): peak 3.056e-02 rad/s\n\nACS occupancy: {'IDLE': '0%', 'POINT': '95%', 'DESAT': '5%'}\nbody rate initial -> final [rad/s]: 0 -> 0.0005606\nwheel |h| initial -> final [N m s]: 4 -> 0.3291\nboresight error initial -> final [deg]: 109.6 -> 1.246\nbest aligned axis: +Z (1.2 deg)",
+ "TC_10.dll": "ADCS_Software_v1.dll 2026-08-10 17:31:06 (148474 B)",
+ "TC_10.plots": "acs_mode.png, wheel_momentum.png, pointing_error.png",
+ "TC_10.rundate": "2026-08-10",
+ "TC_10.status": "PASS",
+ "meta.date": "2026-08-10",
+ "meta.docid": "ADCS-STP-001",
+ "meta.env": "Basilisk 2.11.1, Python 3.12.10 (AMD64), Windows 11. Headless: no Vizard, synthetic camera feed for the optical cases.",
+ "meta.rev": "1.0 (draft)",
+ "meta.sut": "ADCS_Software_v1.dll, built from Simulink model version 2.57 (grt.tlc, x86-64). Contains hand-applied patches to the generated C -- see Observations on TC_08.",
+ "rtm.REQ_01": "The ADCS shall reduce an initial body rate to below 20% of its starting magnitude using the detumble control law, without exceeding actuator limits.",
+ "rtm.REQ_02": "The ADCS shall acquire and hold nadir pointing, aligning the +Z payload boresight with the nadir direction to within 5 deg and holding it against orbital motion.",
+ "rtm.REQ_03": "The ADCS shall acquire and hold Sun pointing, aligning the +Z boresight with the Sun direction in the inertial frame to within 15 deg.",
+ "rtm.REQ_04": "The ADCS shall track a specified Earth-fixed ground target, keeping the +Z boresight on the target to within 15 deg as the Earth rotates beneath the orbit.",
+ "rtm.REQ_05": "The ADCS shall track a co-orbiting satellite optically, holding the target within 25 px (2.0 deg) of the camera frame centre, and shall acquire a target that is initially off-boresight but within the camera field of view.",
+ "rtm.REQ_06": "When reaction-wheel stored momentum reaches the desaturation entry threshold (0.95 x h_max), the ADCS shall shed momentum below the exit threshold (0.25 x h_max) before executing the commanded pointing mode.",
+ "sum.TC_01.date": "2026-08-10",
+ "sum.TC_02.date": "2026-08-10",
+ "sum.TC_03.date": "2026-08-10",
+ "sum.TC_04.date": "2026-08-10",
+ "sum.TC_05.date": "2026-08-10",
+ "sum.TC_06.date": "2026-08-10",
+ "sum.TC_07.date": "2026-08-10",
+ "sum.TC_08.date": "2026-08-10",
+ "sum.TC_09.date": "2026-08-10",
+ "sum.TC_10.date": "2026-08-10",
+ "summary.assessment": "9 of 10 cases pass.\n\nAll five mission modes verified: detumble, nadir pointing, Sun pointing, Earth-target tracking and inter-satellite optical tracking, each from a nominal start. Desaturation before pointing is verified for nadir, Sun and Earth-target (TC_08 - TC_10).\n\nTC_07 fails on a criterion now believed to be incorrectly specified; see its Observations. A 4000 s run confirms this is structural rather than a timing effect -- the wheels empty completely and the vehicle comes to rest without DESAT ever being entered. No software defect is currently open against it.\n\nCAVEATS ON THIS EVIDENCE:\n- The binary contains hand-applied patches to generated C in the optical (<S18>) and desaturation (<S25>) laws. Until those changes are made in the Simulink model, any regeneration invalidates these results.\n- TC_01 - TC_06 were last run against an earlier binary and an earlier reaction-wheel configuration (50 N m s catalogue wheel rather than the 4 N m s flight wheel). They should be re-run so the whole document reflects a single build before it is used as evidence.\n- The controller is fed truth state: no sensor models are implemented, and no disturbance torques are enabled. Pointing accuracy here is therefore an upper bound."
+};
+</script>
+
+<script>
+/* ===================================================================
+   Test case definitions.  Add a case by appending an object here.
+   run_test_cases.py parses this array, so keep the field order and the
+   quoting style: it reads id, cmd, dur, attitude and wheels.
+   =================================================================== */
+
+const CASES = [
+ {id:"TC_01", req:"REQ_01", cmd:1, title:"Detumble from a tumbling state",
+  attitude:"TUMBLED", wheels:"DESATURATED", dur:900, method:"Test, Analysis",
+  objective:"Confirm the controller nulls an initial body rate and that the FSM occupies ACS_DETUMBLE while doing so.",
+  ic:[["Body rate","(0.030, -0.020, 0.040) rad/s, |w| = 0.0539 rad/s"],
+      ["Wheel momentum","0 N m s (all three wheels at rest)"],
+      ["Attitude","Nominal RAM alignment (+Z along velocity)"]],
+  criteria:[["Reaches ACS_DETUMBLE (state 1)","> 10% of steps"],
+            ["Body rate reduced","final < 20% of initial"],
+            ["Body rate bounded","peak < 0.5 rad/s, all finite"]],
+  expected:"Body rate decays toward zero with a time constant of roughly 190 s. Note that RW_tau is zero in this mode - detumble is performed by the thrusters."},
+
+ {id:"TC_02", req:"REQ_02", cmd:4, title:"Nadir pointing acquisition and hold",
+  attitude:"DETUMBLED", wheels:"DESATURATED", dur:900, method:"Test, Analysis",
+  objective:"Confirm the +Z payload boresight acquires and holds the nadir direction.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","0 N m s"],
+      ["Attitude","Nominal RAM alignment, ~90 deg from nadir"]],
+  criteria:[["Reaches ACS_POINT (state 2)","> 10% of steps"],
+            ["Boresight error at end","< 5 deg"],
+            ["Pointing settled","std over final 10% < 2 deg"]],
+  expected:"Boresight error falls from ~90.6 deg to well under 1 deg with +Z the best-aligned body axis."},
+
+ {id:"TC_03", req:"REQ_03", cmd:5, title:"Sun pointing acquisition and hold",
+  attitude:"DETUMBLED", wheels:"DESATURATED", dur:900, method:"Test, Analysis",
+  objective:"Confirm the +Z boresight acquires and holds the Sun direction in the inertial frame.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","0 N m s"],
+      ["Attitude","Nominal RAM alignment"]],
+  criteria:[["Reaches ACS_POINT (state 2)","> 10% of steps"],
+            ["Boresight error at end","< 15 deg"],
+            ["Pointing settled","std over final 10% < 2 deg"]],
+  expected:"Boresight converges on the Sun vector and holds without oscillation."},
+
+ {id:"TC_04", req:"REQ_04", cmd:6, title:"Earth ground-target tracking",
+  attitude:"DETUMBLED", wheels:"DESATURATED", dur:900, method:"Test, Analysis",
+  objective:"Confirm the boresight tracks a rotating Earth-fixed ground target.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","0 N m s"],
+      ["Attitude","Nominal RAM alignment"],
+      ["Target","Ground coordinates from config/target.py"]],
+  criteria:[["Reaches ACS_POINT (state 2)","> 10% of steps"],
+            ["Boresight error at end","< 15 deg"],
+            ["Pointing settled","std over final 10% < 2 deg"]],
+  expected:"Boresight tracks the target through Earth rotation; a small steady following error is expected."},
+
+ {id:"TC_05", req:"REQ_05", cmd:9, title:"Inter-satellite tracking - target initially centred",
+  attitude:"DETUMBLED", wheels:"DESATURATED", dur:600, method:"Test",
+  objective:"Confirm the optical law HOLDS a target that is already on boresight at scenario start.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","0 N m s"],
+      ["Attitude","RAM-aligned; companion at +60 m along-track, i.e. on the +Z boresight"],
+      ["Camera","512x512, 40 deg FOV, synthetic projection"],
+      ["Target in frame at t=0","YES - required, the flight software performs no search"]],
+  criteria:[["Reaches ACS_OPTICAL (state 8)","> 10% of steps"],
+            ["Target in frame at t = 0","must be true"],
+            ["Centroid held near centre","tail-mean radius < 25 px (2.0 deg)"],
+            ["Centroid bounded","peak radius < 150 px"],
+            ["Target never lost","visible on every step"]],
+  expected:"Centroid remains within a few pixels of frame centre for the whole run."},
+
+ {id:"TC_06", req:"REQ_05", cmd:9, title:"Inter-satellite acquisition from 8 deg off-boresight",
+  attitude:"OFF-POINTING", wheels:"DESATURATED", dur:600, method:"Test, Analysis",
+  objective:"Confirm the optical law PULLS IN a target that starts off-boresight. This is the case that validates the sign of the optical control law.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","0 N m s"],
+      ["Attitude","RAM alignment rotated 8 deg about body X (inside the 20 deg half-FOV)"],
+      ["Target in frame at t=0","YES, but off-centre"]],
+  criteria:[["Reaches ACS_OPTICAL (state 8)","> 10% of steps"],
+            ["Centroid acquired","tail-mean < 50% of head-mean"],
+            ["Centroid held near centre","tail-mean radius < 25 px"],
+            ["Target never lost","visible on every step"]],
+  expected:"Centroid converges from roughly 28 px to the same steady state as TC_05. An inverted gain would instead grow the offset."},
+
+ {id:"TC_07", req:"REQ_06", cmd:1, title:"Detumble from a saturated-wheel state",
+  attitude:"TUMBLED", wheels:"SATURATED", dur:4000, method:"Test",
+  objective:"Confirm the controller desaturates the wheels first, then executes the commanded mode.",
+  ic:[["Body rate","(0.030, -0.020, 0.040) rad/s"],
+      ["Wheel momentum","50 N m s per wheel (at h_max)"],
+      ["Attitude","Nominal RAM alignment"]],
+  criteria:[["Enters ACS_DESAT (state 7)","must occur"],
+            ["DESAT precedes the commanded mode","ordering of first occurrence"],
+            ["Wheel momentum shed","final < initial"],
+            ["Reaches the commanded ACS state","> 10% of steps"]],
+  expected:"Momentum falls below the 12.5 N m s exit band, the controller leaves DESAT, and the commanded mode then runs."},
+
+ {id:"TC_08", req:"REQ_06", cmd:4, title:"Nadir pointing from a saturated-wheel state",
+  attitude:"DETUMBLED", wheels:"SATURATED", dur:1500, method:"Test",
+  objective:"Confirm desaturation precedes nadir pointing.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","50 N m s per wheel"],
+      ["Attitude","Nominal RAM alignment"]],
+  criteria:[["Enters ACS_DESAT (state 7)","must occur"],
+            ["DESAT precedes the commanded mode","ordering of first occurrence"],
+            ["Wheel momentum shed","final < initial"],
+            ["Reaches ACS_POINT","> 10% of steps"]],
+  expected:"Desaturation completes, then the boresight acquires nadir."},
+
+ {id:"TC_09", req:"REQ_06", cmd:5, title:"Sun pointing from a saturated-wheel state",
+  attitude:"DETUMBLED", wheels:"SATURATED", dur:1500, method:"Test",
+  objective:"Confirm desaturation precedes Sun pointing.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","50 N m s per wheel"],
+      ["Attitude","Nominal RAM alignment"]],
+  criteria:[["Enters ACS_DESAT (state 7)","must occur"],
+            ["DESAT precedes the commanded mode","ordering of first occurrence"],
+            ["Wheel momentum shed","final < initial"],
+            ["Reaches ACS_POINT","> 10% of steps"]],
+  expected:"Desaturation completes, then the boresight acquires the Sun."},
+
+ {id:"TC_10", req:"REQ_06", cmd:6, title:"Earth-target tracking from a saturated-wheel state",
+  attitude:"DETUMBLED", wheels:"SATURATED", dur:1500, method:"Test",
+  objective:"Confirm desaturation precedes ground-target tracking.",
+  ic:[["Body rate","0 rad/s"],["Wheel momentum","50 N m s per wheel"],
+      ["Attitude","Nominal RAM alignment"]],
+  criteria:[["Enters ACS_DESAT (state 7)","must occur"],
+            ["DESAT precedes the commanded mode","ordering of first occurrence"],
+            ["Wheel momentum shed","final < initial"],
+            ["Reaches ACS_POINT","> 10% of steps"]],
+  expected:"Desaturation completes, then the boresight acquires the ground target."}
+];
+
+/* =================================================================== */
+const badge = s => `<span class="badge b-${s.toLowerCase().replace(/[^a-z]/g,"")}">${s}</span>`;
+const rows  = a => a.map(([k,v])=>`<tr><td style="width:34%">${k}</td><td>${v}</td></tr>`).join("");
+
+function caseHTML(c){
+  // Only the plots the run actually produced are shown.  Each case gets the
+  // figures that evidence ITS criteria -- a saturated pointing case needs the
+  // ACS-mode trace and the momentum trace, not a full plot set.
+  const made = (window.RESULTS?.[c.id+".plots"] || "").split(",")
+                 .map(s=>s.trim()).filter(Boolean);
+  const plots = made.length ? made.map(p=>{
+    const src = `plots/${c.id}/${p}`;
+    return `<div class="plot">
+      <img src="${src}" alt="${p}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="missing" style="display:none">file missing: ${p}</div>
+      <div class="cap">${src}</div></div>`;
+  }).join("")
+   : `<div class="plot"><div class="missing">no plots yet &mdash; run
+      <code>python run_test_cases.py --case ${c.id}</code></div></div>`;
+
+  return `<div class="tc" id="${c.id}">
+    <div class="tc-head">
+      <span class="tc-id">${c.id}</span>
+      <span class="tc-title">${c.title}</span>
+      ${badge(c.attitude)} ${badge(c.wheels)}
+      <select class="status" data-k="${c.id}.status" onchange="styleStatus(this)">
+        <option value="">-- status --</option><option>PASS</option>
+        <option>FAIL</option><option>BLOCKED</option><option>NOT RUN</option>
+      </select>
+    </div>
+    <div class="tc-body">
+      <table>
+        <tr><th style="width:22%">Traces to</th><td>${c.req}</td></tr>
+        <tr><th>Mission command</th><td><code>${c.cmd}</code></td></tr>
+        <tr><th>Verification method</th><td>${c.method}</td></tr>
+        <tr><th>Simulation duration</th><td><strong>${c.dur} s</strong> of simulated time
+            (${(c.dur/0.05).toLocaleString()} control steps at 0.05 s)</td></tr>
+        <tr><th>Objective</th><td>${c.objective}</td></tr>
+      </table>
+
+      <div class="grid2">
+        <div>
+          <h3>Initial state at scenario start</h3>
+          <table>
+            <tr><th style="width:34%">Attitude state</th><td>${badge(c.attitude)}</td></tr>
+            <tr><th>Wheel state</th><td>${badge(c.wheels)}</td></tr>
+            ${rows(c.ic)}
+          </table>
+        </div>
+        <div>
+          <h3>Pass criteria</h3>
+          <table><tr><th style="width:58%">Check</th><th>Threshold</th></tr>
+            ${c.criteria.map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join("")}
+          </table>
+        </div>
+      </div>
+
+      <h3>Expected result</h3>
+      <p>${c.expected}</p>
+
+      <h3>Actual result</h3>
+      <span class="fill" data-k="${c.id}.actual"
+            data-ph="Measured values: final body rate, boresight error, centroid radius, wheel momentum, ACS occupancy..."></span>
+
+      <h3>Observations / deviations</h3>
+      <span class="fill" data-k="${c.id}.notes"
+            data-ph="Anomalies, waivers, retest notes, defect references."></span>
+
+      <h3>Run record</h3>
+      <table><tr>
+        <th style="width:17%">Run date</th><td style="width:33%"><span class="fill" data-k="${c.id}.rundate" data-ph="YYYY-MM-DD"></span></td>
+        <th style="width:17%">DLL build</th><td><span class="fill" data-k="${c.id}.dll" data-ph="build timestamp / model version"></span></td>
+      </tr></table>
+
+      <h3>Plots</h3>
+      <div class="plots">${plots}</div>
+    </div></div>`;
+}
+
+document.getElementById("cases").innerHTML = CASES.map(caseHTML).join("");
+
+/* RTM ------------------------------------------------------------- */
+const reqs = {};
+CASES.forEach(c => (reqs[c.req] ||= []).push(c.id));
+document.getElementById("rtm").insertAdjacentHTML("beforeend",
+  Object.entries(reqs).map(([r,ids])=>`<tr>
+    <td><strong>${r}</strong></td>
+    <td><span class="fill" data-k="rtm.${r}" data-ph="requirement text"></span></td>
+    <td>${ids.map(i=>`<a href="#${i}">${i}</a>`).join(", ")}</td>
+    <td>Test</td></tr>`).join(""));
+
+/* Summary --------------------------------------------------------- */
+document.getElementById("summary").insertAdjacentHTML("beforeend",
+  CASES.map(c=>`<tr>
+    <td><a href="#${c.id}"><strong>${c.id}</strong></a></td>
+    <td>${c.title}</td>
+    <td>${badge(c.attitude)} ${badge(c.wheels)}</td>
+    <td>${c.dur} s</td>
+    <td><span id="sum-${c.id}" class="sub">-</span></td>
+    <td><span class="fill" data-k="sum.${c.id}.date" data-ph=""></span></td>
+  </tr>`).join(""));
+
+/* Persistence ----------------------------------------------------- */
+const KEY = "adcs_test_cases_v1";
+const store = () => JSON.parse(localStorage.getItem(KEY) || "{}");
+
+function fields(){ return document.querySelectorAll("[data-k]"); }
+
+/* Keys the test runner owns.  A fresh run must win over whatever the browser
+   cached, or re-running would silently show stale numbers.  Everything else --
+   notes, metadata, approvals -- is the human's and is never overwritten. */
+const AUTO = /\.(actual|status|rundate|dll|plots)$/;
+
+function load(){
+  const manual = store(), auto = window.RESULTS || {};
+  fields().forEach(el=>{
+    const k = el.dataset.k;
+    const v = AUTO.test(k) ? (auto[k] ?? manual[k]) : (manual[k] ?? auto[k]);
+    if(v===undefined) return;
+    if(el.tagName==="SELECT"){ el.value=v; styleStatus(el); }
+    else el.textContent = v;
+  });
+}
+
+function saveAll(){
+  const d = {};
+  fields().forEach(el=>{
+    const v = el.tagName==="SELECT" ? el.value : el.textContent.trim();
+    if(v) d[el.dataset.k]=v;
+  });
+  localStorage.setItem(KEY, JSON.stringify(d));
+  const m = document.getElementById("savedMsg");
+  m.textContent = "saved " + new Date().toLocaleTimeString();
+  setTimeout(()=>m.textContent="", 2500);
+}
+
+function styleStatus(sel){
+  sel.className = "status" + (sel.value ? " s-"+sel.value.replace(" ","") : "");
+  const id = sel.dataset.k.split(".")[0];
+  const cell = document.getElementById("sum-"+id);
+  if(cell){ cell.textContent = sel.value || "-";
+            cell.className = sel.value ? "s-"+sel.value.replace(" ","") : "sub"; }
+}
+
+function exportJSON(){
+  saveAll();
+  const blob = new Blob([JSON.stringify(store(),null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "adcs_test_results.json"; a.click();
+}
+
+function importJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => { localStorage.setItem(KEY, e.target.result); load(); };
+  r.readAsText(f); input.value = "";
+}
+
+function clearAll(){
+  if(!confirm("Clear every entered value on this page?")) return;
+  localStorage.removeItem(KEY);
+  fields().forEach(el=>{ if(el.tagName==="SELECT"){el.value="";styleStatus(el);}
+                         else el.textContent=""; });
+}
+
+fields().forEach(el=>{
+  if(el.tagName!=="SELECT"){ el.contentEditable="true"; el.spellcheck=false; }
+  el.addEventListener("change", saveAll);
+  el.addEventListener("blur", saveAll);
+});
+
+/* Click a figure to see it at full resolution; Esc or click closes. */
+const zoom = document.getElementById("zoom");
+document.addEventListener("click", e=>{
+  if(e.target.tagName==="IMG" && e.target.closest(".plot")){
+    zoom.querySelector("img").src = e.target.src;
+    zoom.classList.add("on");
+  }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") zoom.classList.remove("on");
+});
+
+load();
+</script>

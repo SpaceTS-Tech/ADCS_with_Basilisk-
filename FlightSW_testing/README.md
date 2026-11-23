@@ -1,0 +1,163 @@
+# Flight-Software Model and Code Generation
+
+## Purpose
+
+This folder contains the software-only ADCS Simulink model. It is used to
+verify the flight-software boundary and generate C code after the control
+algorithms have been tested with the plant model in `../v1/`.
+
+Unlike the integrated model, this model receives spacecraft and environment
+states through root inputs and produces ADCS state and actuator commands
+through root outputs. The generated code is used by the Basilisk
+software-in-the-loop simulation in `../Basilisk/`.
+
+## Main files and directories
+
+| Path | Purpose |
+| --- | --- |
+| `ADCS_Software_v1.slx` | Primary software-only ADCS model and code-generation source. |
+| `ADCS_Software_v1.slxc` | Simulink cache artifact (regenerated; git-ignored). |
+| `ADCS_Software_v1.exe` | Generated standalone executable, when the GRT build completes successfully. |
+| `ADCS_Software_v1_grt_rtw/` | Generated C source, headers, objects, metadata, and makefiles. |
+| `slprj/` | Simulink build and cache data (regenerated; git-ignored). |
+
+`ADCS_Software_v1.slx` is the source of truth. Files under
+`ADCS_Software_v1_grt_rtw/`, the `.slxc` cache, `slprj/`, object files, and the
+executable are generated artifacts.
+
+## Current generated-code configuration
+
+The checked-in generated code reports:
+
+- Model: `ADCS_Software_v1`
+- Model version: `1.129`
+- Simulink Coder: `25.2 (R2025b)`
+- System target file: `grt.tlc`
+- Entry points: `ADCS_Software_v1_initialize()` and
+  `ADCS_Software_v1_step()`
+
+Regenerating with another MATLAB release or target can change the generated
+API, data structures, numerical behavior, and required compiler.
+
+## Generated interface
+
+The current generated root inputs are:
+
+| Input | Size | Description |
+| --- | ---: | --- |
+| `q_BI` | 4 | Spacecraft attitude quaternion. |
+| `omega` | 3 | Spacecraft angular velocity. |
+| `B` | 3 | Magnetic-field vector. |
+| `RW_omega` | 3 | Reaction-wheel angular velocities. |
+| `v_sat_i` | 3 | Spacecraft inertial velocity. |
+| `r_sat_i` | 3 | Spacecraft inertial position. |
+| `r_p_i` | 3 | Planet/reference position used by the controller. |
+| `v_sun_i` | 3 | Sun inertial velocity. |
+| `r_sun_i` | 3 | Sun inertial position. |
+
+The current generated root outputs are:
+
+| Output | Size | Description |
+| --- | ---: | --- |
+| `actual_ephem` | 1 | Active ephemeris mode/state. |
+| `actual_ads` | 1 | Active attitude-determination mode/state. |
+| `mode_degraded` | 1 | Degraded-mode status flag. |
+| `RW_tau` | 3 | Reaction-wheel torque command. |
+| `THR_tau` | 3 | Thruster body-torque command. |
+| `MTQ_tau` | 3 | Magnetorquer command produced by the model. |
+
+The declarations are generated in
+`ADCS_Software_v1_grt_rtw/ADCS_Software_v1.h`. If the root interface changes,
+the Basilisk adapter and wrapper must be updated at the same time.
+
+## Opening and validating the model
+
+Start MATLAB and change to this folder:
+
+```matlab
+cd('path/to/ADCS_Software_Simulink/FlightSW_testing')
+open_system('ADCS_Software_v1')
+```
+
+Before generating code:
+
+1. Update the model diagram.
+2. Resolve all model diagnostics.
+3. Confirm root input/output names, dimensions, types, units, and frame
+   conventions.
+4. Confirm the fixed-step size expected by the target integration.
+5. Run the available simulation tests and compare against the integrated model
+   in `../v1/`.
+6. Confirm controller gains, actuator limits, mission-command defaults, and
+   initial states.
+
+## Generating C code
+
+With the model open, use **Build Model** in Simulink or run:
+
+```matlab
+slbuild('ADCS_Software_v1')
+```
+
+For the current GRT configuration, the build populates
+`ADCS_Software_v1_grt_rtw/` and may produce `ADCS_Software_v1.exe`.
+
+The generated directory contains:
+
+- `ADCS_Software_v1.c` and `ADCS_Software_v1.h` - main generated model code
+- `ADCS_Software_v1_data.c` - generated parameter data
+- `ADCS_Software_v1_types.h` and `rtwtypes.h` - generated types
+- `ADCS_Software_v1.mk` and `.bat` - generated build files
+- `codeInfo.mat`, `buildInfo.mat`, and related metadata
+- Compiler object and response files
+
+Do not manually implement algorithm changes in the generated `.c` or `.h`
+files. Those changes will be lost during the next build. Make algorithm and
+interface changes in the Simulink model, then regenerate.
+
+## Rebuilding the generated executable
+
+The generated batch file invokes the MinGW makefile:
+
+```powershell
+cd ADCS_Software_v1_grt_rtw
+.\ADCS_Software_v1.bat
+```
+
+The checked-in `setup_mingw.bat` currently sets `MINGW_ROOT` to
+`C:\mingw64\bin`. Update that local toolchain path if MinGW is installed
+elsewhere. A MATLAB-supported compiler configuration is recommended when
+regenerating the code.
+
+## Hand-off to Basilisk
+
+After a successful and reviewed code-generation build:
+
+1. Copy or synchronize the required generated source and header files into
+   `../Basilisk/ADCS_Software_v1_grt_rtw/`.
+2. Preserve or reapply `adcs_basilisk_wrapper.c`; it is integration code and is
+   not generated by Simulink.
+3. Rebuild `ADCS_Software_v1.dll` and its import library for the Basilisk
+   scenario.
+4. Check that the DLL exports the generated initialize/step functions and the
+   wrapper helper functions.
+5. Run the Basilisk scenario and review its plots and mode histories.
+
+The Basilisk script directly maps generated C structures with `ctypes`.
+Therefore, changes to signal order, data types, dimensions, generated
+structures, parameters, or internal fields may require Python and C-wrapper
+changes even if the C model itself builds successfully.
+
+## Version and artifact control
+
+When committing regenerated code, record:
+
+- MATLAB and Simulink Coder release
+- Model version or revision
+- Code-generation target
+- Compiler and architecture
+- Controller sample time
+- Tests performed before and after generation
+
+Review generated diffs separately from model changes. Large unexpected changes
+can indicate a tool-version, target, configuration, or model-interface change.
