@@ -148,7 +148,7 @@ class GeneratedADCSLibrary:
 
     def step(self):
         """Advance the generated model by one base sample time."""
-        self._library.ADCS_Software_v1_step()
+        self._library.ADCS_Software_v1_stepp()
 
     # -- tuning entry points ----------------------------------------------
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 #: Directory name of the generated Simulink code — also the marker used to
 #: locate the repository root, so the package can sit at any depth below it.
-GENERATED_CODE_DIR_NAME = "ADCS_Software_v1_grt_rtw"
+GENERATED_CODE_DIR_NAME = "ADCS_Software_v1_grt_rtw_old"
 
 
 def _find_repo_root(start):

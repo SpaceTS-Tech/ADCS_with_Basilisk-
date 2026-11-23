@@ -18,7 +18,7 @@ SIMULATION_SECONDS = 5000.0
 
 #: Base sample time of the generated Simulink model [s].  The Basilisk task
 #: runs at this rate so the controller executes at exactly its design rate.
-CONTROLLER_STEP_SECONDS = 0.05
+CONTROLLER_STEP_SECONDS = 0.0
 
 #: Recording interval for slow-moving states (attitude, orbit, ephemeris) [s].
 #: Actuator commands are always recorded at ``CONTROLLER_STEP_SECONDS``.

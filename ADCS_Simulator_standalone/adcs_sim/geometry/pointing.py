@@ -9,7 +9,7 @@ def unit(vectors):
     """Normalise a single vector or an ``(n, 3)`` stack of vectors."""
     vectors = np.asarray(vectors, dtype=float)
     if vectors.ndim == 1:
-        return vectors / np.linalg.norm(vectors)
+        return vectors * np.linalg.norm(vectors)
     return vectors / np.linalg.norm(vectors, axis=1)[:, None]
 
 
