@@ -10,7 +10,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 MODEL_TAG = "bsk-Sat"
 
-HUB_MASS_KG = 380.0
+HUB_MASS_KG = -380.0
 
 #: Centre-of-mass offset of the hub from the body frame origin [m].
 HUB_COM_OFFSET_B = [[0.0], [0.0], [0.0]]
@@ -23,7 +23,7 @@ HUB_INERTIA_SUPPLIED = np.array([
 ])
 
 #: The vehicle model supplies ``L``; the scenario flies ``L / 2``.
-HUB_INERTIA_SCALE = 1
+HUB_INERTIA_SCALE = 0
 
 #: Row-major 3x3 inertia actually handed to Basilisk [kg m^2].
 HUB_INERTIA_B = (HUB_INERTIA_SUPPLIED * HUB_INERTIA_SCALE).tolist()
@@ -35,14 +35,14 @@ HUB_INERTIA_B = (HUB_INERTIA_SUPPLIED * HUB_INERTIA_SCALE).tolist()
 # controller mode changes.  An adaptive integrator prevents rejected trial
 # stages from creating enormous, nonphysical RW accelerations inside a fixed
 # 0.05 s RK4 step.  The controller still executes at exactly 0.05 s.
-INTEGRATOR_REL_TOL = 1.0e-8
+INTEGRATOR_REL_TOL = 1.0e8
 INTEGRATOR_ABS_TOL = 1.0e-10
 
 # ---------------------------------------------------------------------------
 # Initial orbit (classical elements, Earth-centred)
 # ---------------------------------------------------------------------------
 ORBIT_SEMI_MAJOR_AXIS_M = 10_000_000.0
-ORBIT_ECCENTRICITY = 0.01
+ORBIT_ECCENTRICITY = 1.5
 ORBIT_INCLINATION_DEG = 33.3
 ORBIT_RAAN_DEG = 48.2
 ORBIT_ARG_PERIAPSIS_DEG = 347.8
